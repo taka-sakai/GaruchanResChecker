@@ -1,0 +1,39 @@
+/**
+ * 追跡ボタン専用スタイル
+ * コンテンツスクリプトで注入されるボタンのスタイル
+ * 注: !important はサイトのスタイルを上書きするために必要
+ * セレクタの詳細度を高めてサイトCSSより優先されるようにしている
+ */
+button.track-comment-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  background: #FFC0CB !important;
+  color: #D8365C !important;
+  border: 1px solid #FFB3C6 !important;
+  border-radius: 4px !important;
+  font-size: 1em !important;
+  font-weight: normal !important;
+  padding: 0.2em 0.8em !important;
+  margin-left: 8px !important;
+  cursor: pointer !important;
+  transition: background-color 0.2s ease !important;
+}
+
+button.track-comment-btn:hover {
+  background: #FFB3C6 !important;
+  border-color: #FF8FAB !important;
+}
+
+button.track-comment-btn:active {
+  background: #FF8FAB !important;
+}
+
+.track-icon {
+  width: 14px !important;
+  height: 14px !important;
+  margin-right: 5px !important;
+  vertical-align: middle !important;
+}
+
+

@@ -1,0 +1,26 @@
+{
+  "name": "garuchan-res-checker",
+  "description": "manifest.json description",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "npm run build:chrome-mv3 && npm run build:chrome-mv3-dev",
+    "build:chrome-mv3": "wxt build --mv3",
+    "build:firefox": "wxt build -b firefox",
+    "build:chrome-mv3-dev": "wxt build --mode development --mv3",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "tsc --noEmit",
+    "postinstall": "wxt prepare"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "wxt": "^0.20.6"
+  },
+  "dependencies": {
+    "node-html-parser": "^7.0.2"
+  }
+}

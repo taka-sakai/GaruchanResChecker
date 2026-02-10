@@ -1,0 +1,23 @@
+# Ignore everything by default
+*
+
+# Track these directories
+!docs/
+!docs/**
+!public/
+!public/**
+!src/
+!src/**
+
+# Track these files in the root
+!.gitignore
+!package.json
+!package-lock.json
+!tsconfig.json
+!wxt.config.ts
+!README.md
+!LICENSE
+
+# Track VSCode settings
+!.vscode/
+!.vscode/settings.json

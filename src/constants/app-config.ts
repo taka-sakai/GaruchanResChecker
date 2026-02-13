@@ -108,6 +108,14 @@ export const SELECTORS = {
   H1: 'h1',
   /** OGタイトル */
   OG_TITLE: 'meta[property="og:title"]',
+  /** コメント投稿ページ: コメント入力フィールド */
+  COMMENT_INPUT: 'input[name="text"]',
+  /** コメント投稿ページ: コメント本文（確認ページ） */
+  COMMENT_BODY_LV3: '.comment-item .body.lv3',
+  /** コメント投稿ページ: トピックリンク */
+  TOPICS_LINK: '.entry-wrap a[href*="/topics/"]',
+  /** コメント投稿ページ: 投稿フォーム */
+  SUBMIT_FORM: 'form#form',
 } as const;
 
 /**
@@ -166,4 +174,66 @@ export const OPTIMISTIC_LOCK = {
 export const COMMENT_ENTRY_CONFIG = {
   /** 保存可能な最大エントリー数（LRU方式で古いエントリーから削除） */
   MAX_ENTRIES: 1000,
+} as const;
+
+/**
+ * ページ識別用テキスト
+ */
+export const PAGE_IDENTIFIERS = {
+  /** コメント投稿確認ページ */
+  COMMENT_CONFIRMATION: 'コメント投稿内容の確認',
+  /** コメント投稿完了ページ */
+  COMMENT_COMPLETION: 'コメント投稿完了',
+} as const;
+
+/**
+ * メッセージタイプ
+ */
+export const MESSAGE_TYPES = {
+  /** ポップアップ更新通知 */
+  REFRESH_POPUP: 'refresh-popup',
+  /** コンテキストメニューからの追跡 */
+  TRACK_FROM_CONTEXT_MENU: 'track-from-context-menu',
+} as const;
+
+/**
+ * コンテキストメニュー設定
+ */
+export const CONTEXT_MENU_CONFIG = {
+  /** 追跡メニューID */
+  TRACK_COMMENT_ID: 'track-comment',
+  /** 追跡メニュータイトル */
+  TRACK_COMMENT_TITLE: 'このコメントを追跡',
+  /** 表示コンテキスト */
+  CONTEXTS: ['all'] as const,
+} as const;
+
+/**
+ * 入力検証設定
+ */
+export const VALIDATION_CONFIG = {
+  /** トピックID/コメント番号の最小桁数 */
+  ID_MIN_DIGITS: 1,
+  /** トピックID/コメント番号の最大桁数 */
+  ID_MAX_DIGITS: 10,
+  /** トピックIDの最小桁数（URL検証用） */
+  TOPIC_ID_MIN_DIGITS_IN_URL: 4,
+  /** コメント本文のデフォルト最大文字数 */
+  DEFAULT_MAX_TEXT_LENGTH: 10000,
+  /** 数値範囲のデフォルト最小値 */
+  DEFAULT_MIN_NUMBER: 0,
+  /** 数値範囲のデフォルト最大値 */
+  DEFAULT_MAX_NUMBER: Number.MAX_SAFE_INTEGER,
+} as const;
+
+/**
+ * 検証用正規表現パターン
+ */
+export const VALIDATION_PATTERNS = {
+  /** ID検証パターン（1-10桁の数字） */
+  ID: /^\d{1,10}$/,
+  /** トピックURLパターン */
+  TOPIC_URL: /^\/topics\/\d{4,}\/?$/,
+  /** ストレージキープレフィックスパターン */
+  STORAGE_KEY: /^(local|session):.+$/,
 } as const;

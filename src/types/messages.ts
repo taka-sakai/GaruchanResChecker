@@ -158,6 +158,17 @@ export interface GetSessionResponse extends BaseResponse {
 }
 
 /**
+ * コンテキストメニューから追跡リクエスト
+ * @description コンテキストメニューで追跡が選択されたことをcontent scriptに通知する
+ */
+export interface TrackFromContextMenuRequest extends BaseMessage {
+  type: 'track-from-context-menu';
+  tabId: number;
+}
+
+export interface TrackFromContextMenuResponse extends BaseResponse {}
+
+/**
  * Popup更新通知
  * @description バックグラウンドからポップアップUIに更新を通知する
  */
@@ -182,6 +193,7 @@ export type MessageRequest =
   | GetTrackButtonVisibleRequest
   | SetSessionRequest
   | GetSessionRequest
+  | TrackFromContextMenuRequest
   | RefreshPopupMessage;
 
 /**
@@ -200,4 +212,5 @@ export type MessageResponse =
   | SetTrackButtonVisibleResponse
   | GetTrackButtonVisibleResponse
   | SetSessionResponse
-  | GetSessionResponse;
+  | GetSessionResponse
+  | TrackFromContextMenuResponse;

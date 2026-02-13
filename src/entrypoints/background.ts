@@ -37,7 +37,14 @@ import {
 } from '../services/crawler-service';
 import { sleep } from '../services/storage-service';
 import { routeMessage } from '../services/message-handler';
-import { STORAGE_KEYS, BADGE_CONFIG, CRAWLER_CONFIG } from '../constants/app-config';
+import {
+  STORAGE_KEYS,
+  BADGE_CONFIG,
+  CRAWLER_CONFIG,
+  MESSAGE_TYPES,
+  CONTEXT_MENU_CONFIG,
+} from '../constants/app-config';
+import { isTrackablePageUrl } from '../utils/validation';
 /**
  * 未読合計を取得する
  * @returns 未読合計
@@ -58,7 +65,7 @@ async function setUnreadTotal(value: number): Promise<void> {
   try {
     const text = next > 0 ? String(next) : '';
     await browser.action.setBadgeText({ text });
-    Logger.info('バッジテキストを設定しました', { text });
+    Logger.debug('バッジテキストを設定しました', { text });
     await browser.action.setBadgeBackgroundColor({ color: BADGE_CONFIG.BACKGROUND_COLOR });
     try {
       await browser.action.setBadgeTextColor?.({ color: BADGE_CONFIG.TEXT_COLOR });
@@ -71,7 +78,7 @@ async function setUnreadTotal(value: number): Promise<void> {
 
   // popup が開いている場合は更新通知を送信
   try {
-    await browser.runtime.sendMessage({ type: 'refresh-popup' });
+    await browser.runtime.sendMessage({ type: MESSAGE_TYPES.REFRESH_POPUP });
   } catch {
     // popup が開いていない場合は無視（エラーは正常）
   }
@@ -123,6 +130,20 @@ export default defineBackground(() => {
 
       // 初期バッジ設定
       await recomputeBadge();
+
+      // コンテキストメニューを作成（初期状態は非表示）
+      browser.contextMenus.create({
+        id: CONTEXT_MENU_CONFIG.TRACK_COMMENT_ID,
+        title: CONTEXT_MENU_CONFIG.TRACK_COMMENT_TITLE,
+        contexts: CONTEXT_MENU_CONFIG.CONTEXTS,
+        visible: false,
+      });
+      Logger.info('コンテキストメニューを作成しました');
+      
+      // 現在のタブに応じてメニューの表示を更新
+      if (tabs && tabs[0]) {
+        await updateContextMenuVisibility(tabs[0].url);
+      }
     } catch (e) {
       Logger.error('初期化中にエラーが発生しました', e);
     }
@@ -133,15 +154,17 @@ export default defineBackground(() => {
     try {
       const tab: Tab = await browser.tabs.get(activeInfo.tabId);
       await updateIconForTab(tab.id, tab.url);
+      await updateContextMenuVisibility(tab.url);
     } catch (e) {
       Logger.error('タブアクティブ化時のエラー', e);
     }
   });
 
   // タブのURLが変化・ページロード完了時
-  browser.tabs.onUpdated.addListener((tabId: number, changeInfo: ChangeInfo, tab: Tab) => {
+  browser.tabs.onUpdated.addListener(async (tabId: number, changeInfo: ChangeInfo, tab: Tab) => {
     if (changeInfo.url || changeInfo.status === 'complete') {
-      updateIconForTab(tabId, changeInfo.url ?? tab.url);
+      await updateIconForTab(tabId, changeInfo.url ?? tab.url);
+      await updateContextMenuVisibility(changeInfo.url ?? tab.url);
     }
   });
 
@@ -152,6 +175,7 @@ export default defineBackground(() => {
       const tabs = await browser.tabs.query({ active: true, windowId });
       if (tabs && tabs[0]) {
         await updateIconForTab(tabs[0].id, tabs[0].url);
+        await updateContextMenuVisibility(tabs[0].url);
       }
     } catch (e) {
       Logger.error('ウィンドウフォーカス変更時のエラー', e);
@@ -205,7 +229,7 @@ export default defineBackground(() => {
     }
   })();
 
-  // メッセージハンドラ（リファクタリング済み）
+  // メッセージハンドラ
   browser.runtime.onMessage.addListener(
     (message: MessageRequest, _sender: unknown, sendResponse: (response: MessageResponse) => void) => {
       if (!message) {
@@ -223,4 +247,38 @@ export default defineBackground(() => {
       return true;
     }
   );
+
+  // コンテキストメニュークリックハンドラ
+  browser.contextMenus.onClicked.addListener((info: any, tab: any) => {
+    if (info.menuItemId === CONTEXT_MENU_CONFIG.TRACK_COMMENT_ID && tab?.id && tab?.url) {
+      // URLをチェック（念のため）
+      if (!isTrackablePageUrl(tab.url)) {
+        Logger.warn('コンテキストメニュー: 追跡不可能なページです', { url: tab.url });
+        return;
+      }
+      
+      Logger.info('コンテキストメニューがクリックされました', { tabId: tab.id, url: tab.url });
+      // content scriptに追跡処理を依頼
+      browser.tabs.sendMessage(tab.id, {
+        type: MESSAGE_TYPES.TRACK_FROM_CONTEXT_MENU,
+        tabId: tab.id
+      }).catch((err: any) => {
+        Logger.error('コンテキストメニュー処理でエラーが発生しました', err);
+      });
+    }
+  });
 });
+
+/**
+ * コンテキストメニューの表示/非表示を更新する
+ * @param url - 現在のタブのURL
+ */
+async function updateContextMenuVisibility(url: string | undefined): Promise<void> {
+  try {
+    const visible = isTrackablePageUrl(url);
+    await browser.contextMenus.update(CONTEXT_MENU_CONFIG.TRACK_COMMENT_ID, { visible });
+    Logger.debug('コンテキストメニューの表示を更新しました', { url, visible });
+  } catch (e) {
+    Logger.error('コンテキストメニューの更新に失敗しました', e);
+  }
+}

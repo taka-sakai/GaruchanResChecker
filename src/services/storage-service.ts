@@ -2,7 +2,7 @@
  * @file ストレージサービス
  * @description WXTストレージAPIのラッパーと楽観ロック機能を提供
  * 
- * @important WXT Storage API 仕様
+ * @note WXT Storage API 仕様
  * このファイルはWXTの storage API (`storage.getItem/setItem/removeItem`) を使用しています。
  * WXT storage APIでは、キーに必ず `local:` または `session:` のプレフィックスが必要です。
  * 
@@ -11,8 +11,8 @@
  * 
  * 例: `local:comment:123:456`, `session:topic:789`
  * 
- * リファクタリング時に browser.storage.local API に直接置き換える場合は、
- * プレフィックスを削除する必要があるため注意してください。
+ * リファクタリングなどで browser.storage.local/session API に置き換える場合は、
+ * プレフィックスを削除する必要があることに注意してください。
  */
 import { storage } from '#imports';
 import Logger from '../utils/logger';
@@ -35,14 +35,15 @@ export function getCommentKey(topicId: string, commentNumber: string): string {
  * @param commentNumber - コメント番号
  * @returns ストレージキー
  * 
- * @important WXT Storage API 仕様
+ * @note WXT Storage API 仕様
+ * このファイルはWXTの storage API (`storage.getItem/setItem/removeItem`) を使用しています。
  * WXTのstorage APIを使用する場合、キーには必ず以下のプレフィックスが必要です：
  * - `local:` ... browser.storage.local に相当
  * - `session:` ... browser.storage.session に相当
  * 
  * このプレフィックスはWXTフレームワークの要件であり、省略すると動作しません。
- * リファクタリング時に browser.storage.local API に直接置き換える場合は、
- * プレフィックスを除去する必要があるため、必ずこの関数を経由してください。
+ * リファクタリングなどで browser.storage.local/session API に直接置き換える場合は、
+ * プレフィックスを除去する必要があることに注意してください。
  * 
  * @example
  * ```typescript
@@ -51,7 +52,7 @@ export function getCommentKey(topicId: string, commentNumber: string): string {
  * await storage.setItem(key, data);
  * 
  * // 誤り: プレフィックスなし（動作しない）
- * await storage.setItem('comment:123:456', data); // ❌
+ * await storage.setItem('comment:123:456', data); // NG!
  * ```
  */
 export function getStorageKey(topicId: string, commentNumber: string): `local:${string}` {

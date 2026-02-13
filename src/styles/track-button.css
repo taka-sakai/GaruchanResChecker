@@ -29,6 +29,10 @@ button.track-comment-btn:active {
   background: #FF8FAB !important;
 }
 
+button.track-comment-btn::after {
+  content: '追跡' !important;
+}
+
 .track-icon {
   width: 14px !important;
   height: 14px !important;

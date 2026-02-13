@@ -53,9 +53,9 @@ export async function fetchResCountForComment(
   const url = buildSafeUrl(SITE_CONFIG.BASE_URL, basePath);
 
   try {
-    Logger.info('返信数取得のため fetch を開始', { url, topicId, commentNumber, pageNumber });
+    Logger.debug('返信数取得のため fetch を開始', { url, topicId, commentNumber, pageNumber });
     const res = await fetch(url);
-    Logger.info('fetch レスポンス', {
+    Logger.debug('fetch レスポンス', {
       url,
       status: res.status,
       ok: res.ok,
@@ -75,7 +75,7 @@ export async function fetchResCountForComment(
     }
 
     const text = await res.text();
-    Logger.info('fetch で取得した HTML の先頭', { url, htmlHead: text.slice(0, 300) });
+    Logger.debug('fetch で取得した HTML の先頭', { url, htmlHead: text.slice(0, 300) });
 
     // node-html-parser でローカルパース
     try {
@@ -202,7 +202,7 @@ export async function crawlCommentsOnce(
           const elapsedDays = (currentTime - postedDate) / (1000 * 60 * 60 * 24);
 
           if (elapsedDays >= CRAWLER_CONFIG.SKIP_AFTER_DAYS) {
-            Logger.info('クローラー: 31日以上経過したエントリーをスキップしました', {
+            Logger.info(`クローラー: ${CRAWLER_CONFIG.SKIP_AFTER_DAYS}日以上経過したエントリーをスキップしました`, {
               topicId: comment.topicId,
               commentNumber: comment.commentNumber,
               elapsedDays: Math.floor(elapsedDays),

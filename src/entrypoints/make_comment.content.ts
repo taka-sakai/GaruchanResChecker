@@ -9,7 +9,12 @@
  */
 import Logger from '../utils/logger';
 import { sendMessageSafely } from '../utils/error-handler';
-import { REGEX_PATTERNS, URL_PATTERNS, SELECTORS } from '../constants/app-config';
+import {
+  REGEX_PATTERNS,
+  URL_PATTERNS,
+  SELECTORS,
+  PAGE_IDENTIFIERS,
+} from '../constants/app-config';
 import type { GetSessionResponse, SetSessionResponse, UpsertCommentResponse } from '../types/messages';
 
 /**
@@ -34,10 +39,10 @@ function getTopicId(): string | null {
  */
 function getCommentBodyFromConfirmation(): string | null {
   // 確認ページのhiddenのinputから取得する
-  const input = (document.querySelector<HTMLInputElement>('input[name="text"]')?.value ?? '').trim();
+  const input = (document.querySelector<HTMLInputElement>(SELECTORS.COMMENT_INPUT)?.value ?? '').trim();
   if (input) return input;
   // 確認ページの表示部分から取得するフォールバック
-  const body = document.querySelector('.comment-item .body.lv3')?.textContent?.trim();
+  const body = document.querySelector(SELECTORS.COMMENT_BODY_LV3)?.textContent?.trim();
   if (body) return body;
   return null;
 }
@@ -100,7 +105,7 @@ export default defineContentScript({
       const h1 = document.querySelector(SELECTORS.H1)?.textContent ?? '';
 
       // 確認ページパターン
-      if (h1.includes('コメント投稿内容の確認') || !!document.querySelector('form#form')) {
+      if (h1.includes(PAGE_IDENTIFIERS.COMMENT_CONFIRMATION) || !!document.querySelector(SELECTORS.SUBMIT_FORM)) {
         // コメント本文
         const commentBody = getCommentBodyFromConfirmation();
         
@@ -119,18 +124,13 @@ export default defineContentScript({
           value: toSave,
         });
 
-        // デバッグのため再取得
-        const res = await sendMessageSafely<GetSessionResponse>({
-          type: 'get-session',
-          key: topicId,
-        });
-        Logger.info('コメント投稿内容の確認ページの情報をセッションに保存しました', res?.value);
+        Logger.info('コメント投稿内容の確認ページの情報をセッションに保存しました', toSave);
         return;
       }
 
       // 完了ページパターン
-      if (h1.includes('コメント投稿完了') || !!document.querySelector('.entry-wrap a[href*="/topics/"]')) {
-        const a = document.querySelector<HTMLAnchorElement>('.entry-wrap a[href*="/topics/"]');
+      if (h1.includes(PAGE_IDENTIFIERS.COMMENT_COMPLETION) || !!document.querySelector(SELECTORS.TOPICS_LINK)) {
+        const a = document.querySelector<HTMLAnchorElement>(SELECTORS.TOPICS_LINK);
         const href = a?.href;
         if (!href) {
           Logger.error('完了ページ: トピックへのリンクが見つかりませんでした');

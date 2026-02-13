@@ -65,11 +65,101 @@ function extractPostedAt(element: Element): string | null {
 }
 
 /**
+ * コメント要素から情報を抽出
+ * @param element - コメント要素
+ * @returns コメント情報、または null
+ */
+function extractCommentInfoFromElement(element: Element): {
+  commentNumber: string;
+  commentBody: string;
+  resCount: number;
+  postedAt: string | null;
+} | null {
+  const commentNumber = element.getAttribute('data-number') || element.id.replace('comment', '');
+  
+  // 基本検証
+  if (!validateCommentNumber(commentNumber)) {
+    Logger.error('無効なコメント番号が検出されました', { commentNumber });
+    return null;
+  }
+
+  const commentBody = extractCommentBody(element);
+  const resCount = extractResCount(element);
+  const postedAt = extractPostedAt(element);
+
+  return { commentNumber, commentBody, resCount, postedAt };
+}
+
+/**
+ * コメント要素を追跡リストに追加
+ * @param element - コメント要素
+ * @param topicId - トピックID
+ * @param topicTitle - トピックタイトル
+ * @param source - 追跡元（'button' | 'context-menu'）
+ */
+export async function trackCommentFromElement(
+  element: Element,
+  topicId: string,
+  topicTitle: string,
+  source: 'button' | 'context-menu' = 'button'
+): Promise<void> {
+  try {
+    const info = extractCommentInfoFromElement(element);
+    if (!info) return;
+
+    const { commentNumber, commentBody, resCount, postedAt } = info;
+
+    // 入力検証（セキュリティ対策）
+    if (!validateTopicId(topicId)) {
+      Logger.error('無効なトピックIDが検出されました', { topicId });
+      return;
+    }
+    if (commentBody && !validateTextLength(commentBody)) {
+      Logger.error('コメント本文が長すぎます', { length: commentBody.length });
+      return;
+    }
+
+    const entry = {
+      topicId,
+      topicTitle,
+      commentNumber,
+      postedAt,
+      commentBody,
+      resCount,
+      unreadCount: 0,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // 書き込みは background 経由で集中処理する
+    const saveResult = await sendMessageSafely<UpsertCommentResponse>({
+      type: 'upsert-comment',
+      entry,
+    });
+
+    if (saveResult?.ok) {
+      const logPrefix = source === 'button' ? 'ボタン' : 'コンテキストメニュー';
+      Logger.info(`${logPrefix}: コメントを保存しました`, entry);
+      // 追加直後に一度クローラーを呼び出して初期値を取得
+      await sendMessageSafely({ type: 'crawl-now' });
+    }
+  } catch (err) {
+    const logPrefix = source === 'button' ? 'ボタン' : 'コンテキストメニュー';
+    Logger.error(`${logPrefix}: コメント保存に失敗`, err);
+  }
+}
+
+/**
  * 各コメントに追跡ボタンを追加する
  * @param topicId - トピック ID
  * @param topicTitle - トピックタイトル
+ * @param commentElements - コメント要素のリスト（省略時は内部で取得）
  */
-export async function addTrackingButtons(topicId: string, topicTitle: string): Promise<void> {
+export async function addTrackingButtons(
+  topicId: string, 
+  topicTitle: string,
+  commentElements?: NodeListOf<Element>
+): Promise<void> {
   // 追跡ボタン表示状態を取得
   const response = await sendMessageSafely<GetTrackButtonVisibleResponse>({
     type: 'get-track-button-visible',
@@ -82,8 +172,11 @@ export async function addTrackingButtons(topicId: string, topicTitle: string): P
     return;
   }
 
+  // 要素リストが渡されなければ取得する
+  const elements = commentElements ?? document.querySelectorAll(SELECTORS.COMMENT_ITEM);
+
   // 各コメントに「追跡」ボタンを追加
-  document.querySelectorAll(SELECTORS.COMMENT_ITEM).forEach((el) => {
+  elements.forEach((el) => {
     // すでにボタンがあればスキップ
     if (el.querySelector(SELECTORS.TRACK_BUTTON)) return;
 
@@ -94,67 +187,12 @@ export async function addTrackingButtons(topicId: string, topicTitle: string): P
     const icon = document.createElement('img');
     icon.src = (browser.runtime as any).getURL(ICONS.PINK_HEART_SVG);
     icon.className = CLASS_NAMES.TRACK_ICON;
-    icon.style.width = '16px';
-    icon.style.height = '16px';
-    icon.style.marginRight = '6px';
-    icon.style.verticalAlign = 'middle';
-
-    const text = document.createElement('span');
-    text.textContent = '追跡';
 
     btn.appendChild(icon);
-    btn.appendChild(text);
 
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      try {
-        // コメント情報取得
-        const commentNumber = el.getAttribute('data-number') || el.id.replace('comment', '');
-        const commentBody = extractCommentBody(el);
-        const resCount = extractResCount(el);
-        const unreadCount = 0;
-        const postedAt = extractPostedAt(el);
-
-        // 入力検証（セキュリティ対策）
-        if (!validateTopicId(topicId)) {
-          Logger.error('無効なトピックIDが検出されました', { topicId });
-          return;
-        }
-        if (!validateCommentNumber(commentNumber)) {
-          Logger.error('無効なコメント番号が検出されました', { commentNumber });
-          return;
-        }
-        if (commentBody && !validateTextLength(commentBody)) {
-          Logger.error('コメント本文が長すぎます', { length: commentBody.length });
-          return;
-        }
-
-        const entry = {
-          topicId,
-          topicTitle,
-          commentNumber,
-          postedAt,
-          commentBody,
-          resCount,
-          unreadCount,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-
-        // 書き込みは background 経由で集中処理する
-        const saveResult = await sendMessageSafely<UpsertCommentResponse>({
-          type: 'upsert-comment',
-          entry,
-        });
-        
-        if (saveResult?.ok) {
-          Logger.info('手動追加: コメントを保存しました', entry);
-          // 追加直後に一度クローラーを呼び出して初期値を取得
-          await sendMessageSafely({ type: 'crawl-now' });
-        }
-      } catch (err) {
-        Logger.error('手動追加: コメント保存に失敗', err);
-      }
+      await trackCommentFromElement(el, topicId, topicTitle, 'button');
     });
 
     // コメント下部にボタン追加

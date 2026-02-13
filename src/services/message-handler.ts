@@ -327,6 +327,10 @@ export async function routeMessage(
         }
         return await handleGetSession(message.key);
 
+      case 'track-from-context-menu':
+        // この処理はbackground.tsで直接実装されるため、ここでは何もしない
+        return { ok: true };
+
       default:
         Logger.warn('未知のメッセージタイプを受信しました', { type: message.type });
         return { ok: false, error: '未知のメッセージタイプです' };

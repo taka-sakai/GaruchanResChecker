@@ -11,15 +11,19 @@
  */
 import Logger from '../utils/logger';
 import { getTopicId, getTopicTitle } from '../utils/topic-extractor';
-import { addTrackingButtons } from '../utils/comment-tracking';
+import { addTrackingButtons, trackCommentFromElement } from '../utils/comment-tracking';
 import { sendMessageSafely } from '../utils/error-handler';
-import type { GetSessionResponse, SetSessionResponse } from '../types/messages';
+import { MESSAGE_TYPES } from '../constants/app-config';
+import type { GetSessionResponse, SetSessionResponse, MessageRequest } from '../types/messages';
 import '../styles/track-button.css';
 
 export default defineContentScript({
   matches: ['https://girlschannel.net/comment/*'],
   async main() {
     Logger.info('コメントページを検出しました。トピック情報を抽出します。');
+
+    // コンテキストメニュー用: 右クリックされたコメント要素を記録
+    let lastContextMenuTarget: Element | null = null;
 
     try {
       const topicId = getTopicId('/comment/');
@@ -46,15 +50,28 @@ export default defineContentScript({
         value: topic,
       });
       
-      // デバッグのために再取得
-      const response = await sendMessageSafely<GetSessionResponse>({
-        type: 'get-session',
-        key: topicId,
-      });
-      Logger.info('トピック情報を抽出/保存しました', response?.value);
+      Logger.info('トピック情報を抽出/保存しました', topic);
+
+      // コメント要素を取得（DOM検索は1回のみ）
+      const commentElements = document.querySelectorAll('.comment-item');
 
       // 各コメントに追跡ボタンを追加
-      await addTrackingButtons(topicId, topicTitle);
+      await addTrackingButtons(topicId, topicTitle, commentElements);
+
+      // コンテキストメニュー用: 各コメントに右クリックイベントリスナーを追加
+      commentElements.forEach((commentEl) => {
+        commentEl.addEventListener('contextmenu', () => {
+          // 右クリックされたコメント要素を記録
+          lastContextMenuTarget = commentEl;
+        });
+      });
+
+      // background.tsからのメッセージを受信
+      browser.runtime.onMessage.addListener((message: MessageRequest) => {
+        if (message.type === MESSAGE_TYPES.TRACK_FROM_CONTEXT_MENU && lastContextMenuTarget) {
+          trackCommentFromElement(lastContextMenuTarget, topicId, topicTitle, 'context-menu');
+        }
+      });
     } catch (err) {
       Logger.error('トピック情報の抽出/保存に失敗しました', err);
     }

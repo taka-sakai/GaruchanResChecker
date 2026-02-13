@@ -14,7 +14,7 @@ import './style.css';
 import Logger from '../../utils/logger';
 import { calculatePageNumber } from '../../utils/pagination';
 import { sendMessageSafely } from '../../utils/error-handler';
-import { COMMENT_ENTRY_CONFIG } from '../../constants/app-config';
+import { COMMENT_ENTRY_CONFIG, SITE_CONFIG } from '../../constants/app-config';
 import type { CommentEntry } from '../../types/comment';
 import type {
   GetTrackButtonVisibleResponse,
@@ -205,7 +205,7 @@ function renderComments(comments: CommentEntry[]): void {
     const sample = group.comments[0];
     const topicIdForLink = sample?.topicId ?? '';
     const topicBase = `/topics/${topicIdForLink}/`;
-    topicLink.href = `https://girlschannel.net${topicBase}`;
+    topicLink.href = `${SITE_CONFIG.BASE_URL}${topicBase}`;
     topicLink.target = '_blank';
     topicLink.rel = 'noopener noreferrer';
     topicLink.textContent = group.topicTitle ?? '';
@@ -255,7 +255,7 @@ function renderComments(comments: CommentEntry[]): void {
 
       const pageNumber = calculatePageNumber(c.commentNumber);
       const commentBase = pageNumber !== '1' ? `/topics/${c.topicId}/${pageNumber}` : `/topics/${c.topicId}/`;
-      const commentUrl = `https://girlschannel.net${commentBase}#comment${c.commentNumber}`;
+      const commentUrl = `${SITE_CONFIG.BASE_URL}${commentBase}#comment${c.commentNumber}`;
       const commentAnchor = document.createElement('a');
       commentAnchor.href = commentUrl;
       commentAnchor.target = '_blank';
@@ -267,7 +267,7 @@ function renderComments(comments: CommentEntry[]): void {
 
       const countsLink = document.createElement('a');
       countsLink.className = 'comment-counts';
-      const shortCommentUrl = `https://girlschannel.net/comment/${c.topicId}/${c.commentNumber}/`;
+      const shortCommentUrl = `${SITE_CONFIG.BASE_URL}/comment/${c.topicId}/${c.commentNumber}/`;
       countsLink.href = shortCommentUrl;
       countsLink.target = '_blank';
       countsLink.rel = 'noopener noreferrer';

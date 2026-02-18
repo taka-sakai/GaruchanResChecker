@@ -232,8 +232,8 @@ export const VALIDATION_CONFIG = {
 export const VALIDATION_PATTERNS = {
   /** ID検証パターン（1-10桁の数字） */
   ID: /^\d{1,10}$/,
-  /** トピックURLパターン */
-  TOPIC_URL: /^\/topics\/\d{4,}\/?$/,
+  /** トピックURLパターン（/topics/の後に4桁以上の数字、その後は任意） */
+  TOPIC_URL: /^\/topics\/\d{4,}/,
   /** ストレージキープレフィックスパターン */
   STORAGE_KEY: /^(local|session):.+$/,
 } as const;

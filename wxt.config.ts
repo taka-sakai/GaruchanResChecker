@@ -5,7 +5,7 @@ export default defineConfig({
     manifest: {
         name: 'ガルちゃん返信チェッカー',
         description: 'ガールズちゃんねる専用の通知アプリ',
-        version: '1.1.0',
+        version: '1.1.1',
         permissions: ['tabs','storage','contextMenus'],
         host_permissions: ['https://girlschannel.net/*'],
         web_accessible_resources: [

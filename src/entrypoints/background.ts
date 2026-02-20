@@ -132,6 +132,8 @@ export default defineBackground(() => {
       await recomputeBadge();
 
       // コンテキストメニューを作成（初期状態は非表示）
+      // 既存のメニューを削除してから作成することで重複エラーを回避
+      await browser.contextMenus.removeAll();
       browser.contextMenus.create({
         id: CONTEXT_MENU_CONFIG.TRACK_COMMENT_ID,
         title: CONTEXT_MENU_CONFIG.TRACK_COMMENT_TITLE,

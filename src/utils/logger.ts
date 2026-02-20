@@ -1,70 +1,48 @@
 /**
- * @file シンプルなログ管理クラス
- * @description 小規模開発向けの軽量ログシステム
- * 
- * セキュリティ強化:
- * - 本番環境では詳細なスタックトレースを出力しない
- * - センシティブな情報のログ出力を制御
+ * @file シンプルなログ管理
+ * @description 本番/開発環境でログを出し分ける
  */
-export class Logger {
-  static prefix: string = `[${browser.runtime.getManifest().name}]`;
 
-  /**
-   * 本番環境かどうか
-   */
-  static isProduction(): boolean {
-    return import.meta.env.MODE === 'production';
+const PREFIX = `[${browser.runtime.getManifest().name}]`;
+const IS_PRODUCTION = import.meta.env.MODE === 'production';
+
+/**
+ * オブジェクトから機密情報をフィルタリングする
+ * @param data - ログ出力するデータ
+ * @returns フィルタリングされたデータ
+ */
+function filterSensitiveData(data: unknown): unknown {
+  // 本番環境ではスタックトレース等の詳細情報を除外
+  if (typeof data === 'object' && data !== null) {
+    const filtered = { ...data } as Record<string, unknown>;
+    delete filtered.stack;
+    delete filtered.errStack;
+    return filtered;
   }
-
-  /**
-   * オブジェクトから機密情報をフィルタリングする
-   * @param data - ログ出力するデータ
-   * @returns フィルタリングされたデータ
-   */
-  private static filterSensitiveData(data: unknown): unknown {
-    if (!this.isProduction()) {
-      return data;
-    }
-
-    // 本番環境ではスタックトレース等の詳細情報を除外
-    if (typeof data === 'object' && data !== null) {
-      const filtered = { ...data } as Record<string, unknown>;
-      delete filtered.stack;
-      delete filtered.errStack;
-      return filtered;
-    }
-
-    return data;
-  }
-
-  // 開発環境でのみ実行（console を直接バインドして呼び出し元情報を保持）
-  static debug(...args: unknown[]): void {
-    if (Logger.isProduction()) return;
-    const filtered = args.map((arg) => Logger.filterSensitiveData(arg));
-    (console.log as any).bind(console, Logger.prefix)(...filtered);
-  }
-
-  static info(...args: unknown[]): void {
-    if (Logger.isProduction()) return;
-    const filtered = args.map((arg) => Logger.filterSensitiveData(arg));
-    (console.info as any).bind(console, Logger.prefix)(...filtered);
-  }
-
-  static warn(...args: unknown[]): void {
-    if (Logger.isProduction()) return;
-    const filtered = args.map((arg) => Logger.filterSensitiveData(arg));
-    (console.warn as any).bind(console, Logger.prefix)(...filtered);
-  }
-
-  /**
-   * 常に実行（本番環境でも出力）
-   * ただし、本番環境ではセンシティブ情報をフィルタリング
-   */
-  static error(...args: unknown[]): void {
-    const filtered = args.map((arg) => Logger.filterSensitiveData(arg));
-    (console.error as any).bind(console, Logger.prefix)(...filtered);
-  }
+  return data;
 }
 
-export default Logger;
+// 開発環境:
+//   すべてのログを出力する
+//   本来の呼び出し元情報を保持するため、consoleを直接bindする（デバッグ効率優先）
+// 本番環境:
+//   debug/info/warnは出力しない
+//   errorはフィルタして出力する（呼び出し元情報は消失するが、セキュリティ優先）
+export const debug = IS_PRODUCTION ? (() => { }) : console.log.bind(console, PREFIX);
+export const info = IS_PRODUCTION ? (() => { }) : console.info.bind(console, PREFIX);
+export const warn = IS_PRODUCTION ? (() => { }) : console.warn.bind(console, PREFIX);
+export const error = IS_PRODUCTION
+  ? (...args: unknown[]) => {
+    const filtered = args.map((arg) => filterSensitiveData(arg));
+    console.error(PREFIX, ...filtered);
+  }
+  : console.error.bind(console, PREFIX);
 
+const Logger = {
+  debug,
+  info,
+  warn,
+  error,
+};
+
+export default Logger;

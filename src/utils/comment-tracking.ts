@@ -40,13 +40,41 @@ function extractCommentBody(element: Element): string {
 }
 
 /**
+ * コメントページの返信数をカウントする
+ * @description コメントページ（/comment/xxx/yyy/）専用の返信数カウント機能。
+ * ページ上の `ul.res-comment` 内の `.comment-item` 要素をカウントする。
+ * @returns 返信数（見つからない場合は 0）
+ */
+function countRepliesOnCommentPage(): number {
+  const resCommentList = document.querySelector(SELECTORS.RES_COMMENT);
+  if (!resCommentList) return 0;
+
+  const replyItems = resCommentList.querySelectorAll(SELECTORS.COMMENT_ITEM);
+  return replyItems.length;
+}
+
+/**
  * 返信数を抽出する
+ * @description コメント要素から返信数を取得する。
+ * トピックページでは `.res-count` 要素から抽出し、
+ * コメントページ（返信カウンター要素がない場合）では、
+ * ページ全体の `ul.res-comment` 内のコメント数をカウントする。
  * @param element - コメント要素
  * @returns 返信数
  */
 function extractResCount(element: Element): number {
   const resBtn = element.querySelector(SELECTORS.RES_COUNT);
-  if (!resBtn) return 0;
+  if (!resBtn) {
+    // 返信カウンター要素が見つからない場合、コメントページかどうかを判定
+    // コメントページでは `ul.topic-comment` の子要素として対象コメントが配置される
+    const topicCommentList = document.querySelector(SELECTORS.TOPIC_COMMENT);
+    if (topicCommentList && topicCommentList.contains(element)) {
+      // コメントページの場合、ul.res-comment 内の返信数をカウント
+      Logger.info('コメントページを検出: 返信数をカウントします');
+      return countRepliesOnCommentPage();
+    }
+    return 0;
+  }
 
   const txt = (resBtn.textContent || '').trim();
   const m = txt.match(REGEX_PATTERNS.RES_COUNT);

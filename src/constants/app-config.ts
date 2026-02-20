@@ -116,6 +116,10 @@ export const SELECTORS = {
   TOPICS_LINK: '.entry-wrap a[href*="/topics/"]',
   /** コメント投稿ページ: 投稿フォーム */
   SUBMIT_FORM: 'form#form',
+  /** コメントページ: トピックコメント領域 */
+  TOPIC_COMMENT: 'ul.topic-comment',
+  /** コメントページ: 返信コメント領域 */
+  RES_COMMENT: 'ul.res-comment',
 } as const;
 
 /**

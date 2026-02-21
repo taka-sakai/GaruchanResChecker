@@ -14,6 +14,7 @@ import {
   URL_PATTERNS,
   SELECTORS,
   PAGE_IDENTIFIERS,
+  TEXT_REPLACEMENTS,
 } from '../constants/app-config';
 import type { GetSessionResponse, SetSessionResponse, UpsertCommentResponse } from '../types/messages';
 
@@ -38,13 +39,22 @@ function getTopicId(): string | null {
  * @returns {(string | null)} コメント本文、または null
  */
 function getCommentBodyFromConfirmation(): string | null {
-  // 確認ページのhiddenのinputから取得する
-  const input = (document.querySelector<HTMLInputElement>(SELECTORS.COMMENT_INPUT)?.value ?? '').trim();
-  if (input) return input;
-  // 確認ページの表示部分から取得するフォールバック
-  const body = document.querySelector(SELECTORS.COMMENT_BODY_LV3)?.textContent?.trim();
-  if (body) return body;
-  return null;
+  // コンテントスクリプト実行時点でDOMに確実に存在する hidden input の値から取得する。
+  // （.comment-itemは非同期ロードのためそこからの取得は不可）
+  const textInput = (document.querySelector<HTMLInputElement>(SELECTORS.COMMENT_INPUT)?.value ?? '').trim();
+  if (!textInput) return null;
+
+  // URL行を【引用】に置換し、空行を除去して連結
+  const processedText = textInput
+    .split('\n')
+    .map(line => REGEX_PATTERNS.URL_LINE.test(line.trim()) ? TEXT_REPLACEMENTS.QUOTE : line.trim())
+    .filter(line => line.length > 0)
+    .join('');
+
+  // 画像添付フラグ が "1" なら末尾に【画像】を追加
+  const hasImage = document.querySelector<HTMLInputElement>(SELECTORS.IS_ADD_PIC_INPUT)?.value === '1';
+  const result = hasImage ? processedText + TEXT_REPLACEMENTS.IMAGE : processedText;
+  return result || null;
 }
 
 /**
@@ -98,7 +108,7 @@ export default defineContentScript({
     try {
       const topicId = getTopicId();
       if (!topicId) {
-        Logger.error('このページにトピックIDが見つかりませんでした。', { href: location.href });
+        Logger.error('このページにトピックIDが見つかりませんでした', { href: location.href });
         return;
       }
 
@@ -182,7 +192,7 @@ export default defineContentScript({
 
       Logger.info('該当するサブパターンが見つかりませんでした');
     } catch (err) {
-      Logger.error('make_comment content script エラー', err);
+      Logger.error('コンテントスクリプトの初期化に失敗しました', err);
     }
   },
 });

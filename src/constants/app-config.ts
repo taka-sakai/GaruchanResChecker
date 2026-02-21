@@ -11,12 +11,8 @@ export const CRAWLER_CONFIG = {
   ACTIVE_DELAY_MS: 3000,
   /** アイドル時の待機時間（ミリ秒） */
   IDLE_DELAY_MS: 60_000,
-  /** リトライ間の待機時間（ミリ秒） */
-  FETCH_RETRY_WAIT_MS: 3000,
   /** スキップする経過日数 */
   SKIP_AFTER_DAYS: 31,
-  /** 最大リトライ回数 */
-  MAX_RETRIES: 3,
 } as const;
 
 /**
@@ -110,8 +106,8 @@ export const SELECTORS = {
   OG_TITLE: 'meta[property="og:title"]',
   /** コメント投稿ページ: コメント入力フィールド */
   COMMENT_INPUT: 'input[name="text"]',
-  /** コメント投稿ページ: コメント本文（確認ページ） */
-  COMMENT_BODY_LV3: '.comment-item .body.lv3',
+  /** コメント投稿ページ: 画像添付フラグ */
+  IS_ADD_PIC_INPUT: 'input[name="is_add_pic"]',
   /** コメント投稿ページ: トピックリンク */
   TOPICS_LINK: '.entry-wrap a[href*="/topics/"]',
   /** コメント投稿ページ: 投稿フォーム */
@@ -160,6 +156,8 @@ export const REGEX_PATTERNS = {
   TOPICS_HREF: /\/topics\/(\d+)\/(\d+)#comment(\d+)/,
   /** コメントアンカー */
   COMMENT_ANCHOR: /#comment(\d+)/,
+  /** URL行パターン（確認ページのlist[name="text"]内のURL行判定用） */
+  URL_LINE: /^https?:\/\//,
 } as const;
 
 /**
@@ -208,8 +206,6 @@ export const CONTEXT_MENU_CONFIG = {
   TRACK_COMMENT_ID: 'track-comment',
   /** 追跡メニュータイトル */
   TRACK_COMMENT_TITLE: 'このコメントを追跡',
-  /** 表示コンテキスト */
-  CONTEXTS: ['all'] as const,
 } as const;
 
 /**

@@ -13,8 +13,8 @@ import Logger from '../utils/logger';
 import { getTopicId, getTopicTitle } from '../utils/topic-extractor';
 import { addTrackingButtons, trackCommentFromElement } from '../utils/comment-tracking';
 import { sendMessageSafely } from '../utils/error-handler';
-import { MESSAGE_TYPES } from '../constants/app-config';
-import type { GetSessionResponse, SetSessionResponse, MessageRequest } from '../types/messages';
+import { MESSAGE_TYPES, SELECTORS } from '../constants/app-config';
+import type { SetSessionResponse, MessageRequest } from '../types/messages';
 import '../styles/track-button.css';
 
 export default defineContentScript({
@@ -28,13 +28,13 @@ export default defineContentScript({
     try {
       const topicId = getTopicId('/comment/');
       if (!topicId) {
-        Logger.error('このページにトピックIDが見つかりませんでした。', { href: location.href });
+        Logger.error('このページにトピックIDが見つかりませんでした', { href: location.href });
         return;
       }
 
       const topicTitle = getTopicTitle();
       if (!topicTitle) {
-        Logger.error('このページにトピックタイトルが見つかりませんでした。', { href: location.href });
+        Logger.error('このページにトピックタイトルが見つかりませんでした', { href: location.href });
         return;
       }
 
@@ -53,7 +53,7 @@ export default defineContentScript({
       Logger.info('トピック情報を抽出/保存しました', topic);
 
       // コメント要素を取得（DOM検索は1回のみ）
-      const commentElements = document.querySelectorAll('.comment-item');
+      const commentElements = document.querySelectorAll(SELECTORS.COMMENT_ITEM);
 
       // 各コメントに追跡ボタンを追加
       await addTrackingButtons(topicId, topicTitle, commentElements);
@@ -73,7 +73,7 @@ export default defineContentScript({
         }
       });
     } catch (err) {
-      Logger.error('トピック情報の抽出/保存に失敗しました', err);
+      Logger.error('コンテントスクリプトの初期化に失敗しました', err);
     }
   },
 });

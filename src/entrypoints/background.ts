@@ -137,7 +137,7 @@ export default defineBackground(() => {
       browser.contextMenus.create({
         id: CONTEXT_MENU_CONFIG.TRACK_COMMENT_ID,
         title: CONTEXT_MENU_CONFIG.TRACK_COMMENT_TITLE,
-        contexts: CONTEXT_MENU_CONFIG.CONTEXTS,
+        contexts: ['all'] as const,
         visible: false,
       });
       Logger.info('コンテキストメニューを作成しました');
@@ -158,7 +158,7 @@ export default defineBackground(() => {
       await updateIconForTab(tab.id, tab.url);
       await updateContextMenuVisibility(tab.url);
     } catch (e) {
-      Logger.error('タブアクティブ化時のエラー', e);
+      Logger.error('タブアクティブ化時にエラーが発生しました', e);
     }
   });
 
@@ -180,7 +180,7 @@ export default defineBackground(() => {
         await updateContextMenuVisibility(tabs[0].url);
       }
     } catch (e) {
-      Logger.error('ウィンドウフォーカス変更時のエラー', e);
+      Logger.error('ウィンドウフォーカス変更時にエラーが発生しました', e);
     }
   });
 

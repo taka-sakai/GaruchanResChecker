@@ -2,6 +2,12 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
     srcDir: 'src',
+    vite: (env) => ({
+        build: {
+            minify: env.mode === 'production' ? 'esbuild' : false,
+            sourcemap: env.mode === 'production' ? false : 'inline',
+        },
+    }),
     manifest: {
         name: 'ガルちゃん返信チェッカー',
         description: 'ガールズちゃんねる専用の通知アプリ',
